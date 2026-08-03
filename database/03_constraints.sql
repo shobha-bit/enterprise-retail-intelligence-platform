@@ -50,8 +50,8 @@ REFERENCES suppliers(supplier_id);
 
 ALTER TABLE transportation_logistics
 ADD CONSTRAINT fk_transport_orders
-FOREIGN KEY (order_id)
-REFERENCES orders(order_id);
+FOREIGN KEY (order_row_id)
+REFERENCES orders(row_id);
 
 
 -- =====================================================
@@ -60,8 +60,8 @@ REFERENCES orders(order_id);
 
 ALTER TABLE payments
 ADD CONSTRAINT fk_payments_orders
-FOREIGN KEY (order_id)
-REFERENCES orders(order_id);
+FOREIGN KEY (order_row_id)
+REFERENCES orders(row_id);
 
 -- =====================================================
 -- Returns → Orders
@@ -69,8 +69,8 @@ REFERENCES orders(order_id);
 
 ALTER TABLE returns
 ADD CONSTRAINT fk_returns_orders
-FOREIGN KEY (order_id)
-REFERENCES orders(order_id);
+FOREIGN KEY (order_row_id)
+REFERENCES orders(row_id);
 
 
 -- =====================================================

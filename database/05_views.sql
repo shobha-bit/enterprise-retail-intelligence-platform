@@ -1,12 +1,12 @@
 -- ============================================
 -- Enterprise Retail Intelligence Platform
 -- File: 05_views.sql
--- Description: Create Business Analytics Views
+-- Description: Business Analytics Views
 -- Author: Shobha Saxena
+-- Version: 2.0
 -- ============================================
 
 SET search_path TO public;
-
 
 -- ============================================
 -- Drop Existing Views (Safe to Re-run)
@@ -22,98 +22,111 @@ DROP VIEW IF EXISTS vw_product_performance CASCADE;
 DROP VIEW IF EXISTS vw_customer_summary CASCADE;
 DROP VIEW IF EXISTS vw_sales_summary CASCADE;
 
-
 -- =====================================================
--- View: vw_sales_summary
--- Description: Sales performance summary
+-- View: Sales Summary
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_sales_summary AS
+CREATE VIEW vw_sales_summary AS
 
 SELECT
-    order_id,
-    order_date,
-    customer_id,
-    product_id,
-    region,
 
-    sales,
-    quantity,
-    discount,
-    profit,
+    o.row_id,
+    o.order_id,
+    o.order_date,
+    o.ship_date,
+    o.ship_mode,
 
-    (sales - profit) AS estimated_cost
+    c.customer_name,
+    c.segment,
 
-FROM orders;
+    p.product_name,
+    p.category,
+    p.sub_category,
+
+    o.country,
+    o.city,
+    o.state,
+    o.region,
+
+    o.sales
+
+FROM orders o
+
+JOIN customers c
+ON o.customer_id = c.customer_id
+
+JOIN products p
+ON o.product_id = p.product_id;
 
 -- =====================================================
--- View: vw_customer_summary
--- Description: Customer purchase summary
+-- View: Customer Summary
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_customer_summary AS
+CREATE VIEW vw_customer_summary AS
 
 SELECT
+
     c.customer_id,
     c.customer_name,
     c.segment,
 
-    COUNT(o.order_id) AS total_orders,
-    SUM(o.sales) AS total_sales,
-    SUM(o.profit) AS total_profit,
-    AVG(o.sales) AS average_order_value
+    COUNT(o.row_id) AS total_order_lines,
+    COUNT(DISTINCT o.order_id) AS total_orders,
+
+    COALESCE(SUM(o.sales),0) AS total_sales,
+    COALESCE(AVG(o.sales),0) AS average_order_value
 
 FROM customers c
-JOIN orders o 
+
+LEFT JOIN orders o
 ON c.customer_id = o.customer_id
 
 GROUP BY
+
     c.customer_id,
     c.customer_name,
     c.segment;
 
 -- =====================================================
--- View: vw_product_performance
--- Description: Product Performance Summary
+-- View: Product Performance
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_product_performance AS 
+CREATE VIEW vw_product_performance AS
 
-SELECT 
-    
+SELECT
+
     p.product_id,
     p.product_name,
     p.category,
     p.sub_category,
 
-    COUNT(o.order_id) AS total_orders,
-    SUM(o.quantity) AS total_quantity_sold,
-    SUM(o.sales) AS total_sales,
-    sum(o.profit) AS total_profit,
-    AVG(o.discount) AS average_discount
-
+    COUNT(o.row_id) AS times_sold,
+    COALESCE(SUM(o.sales), 0) AS total_sales,
+    COALESCE(AVG(o.sales), 0) AS average_sales
 FROM products p
-JOIN orders o
+
+LEFT JOIN orders o
 ON p.product_id = o.product_id
 
 GROUP BY
+
     p.product_id,
     p.product_name,
     p.category,
     p.sub_category;
 
 -- =====================================================
--- View: vw_inventory_status
--- Description: Inventory Status Summary
+-- View: Inventory Status
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_inventory_status AS
+CREATE VIEW vw_inventory_status AS
 
 SELECT
 
     i.inventory_id,
-    p.product_id,
+
     p.product_name,
+
     s.supplier_name,
 
     i.warehouse_name,
@@ -129,57 +142,61 @@ FROM inventory i
 
 JOIN products p
 ON i.product_id = p.product_id
+
 LEFT JOIN suppliers s
 ON i.supplier_id = s.supplier_id;
 
 -- =====================================================
--- View: vw_supplier_performance
--- Description: Supplier Performance Summary
+-- View: Supplier Performance
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_supplier_performance AS
+CREATE VIEW vw_supplier_performance AS
 
 SELECT
 
     s.supplier_id,
     s.supplier_name,
-    s.contact_person,
+
     s.city,
     s.country,
+
     s.supplier_rating,
 
-    COUNT(i.product_id) AS total_products,
-    COALESCE(SUM(i.stock_quantity), 0) AS total_stock,
-    COUNT(DISTINCT i.warehouse_name) AS warehouses_served
+    COUNT(i.inventory_id) AS inventory_records,
+
+    COALESCE(SUM(i.stock_quantity),0) AS total_stock
 
 FROM suppliers s
+
 LEFT JOIN inventory i
 ON s.supplier_id = i.supplier_id
 
-GROUP BY 
-    
+GROUP BY
+
     s.supplier_id,
     s.supplier_name,
-    s.contact_person,
     s.city,
     s.country,
     s.supplier_rating;
 
 -- =====================================================
--- View: vw_transportation_summary
--- Description: Transportation Performance Summary
+-- View: Transportation Summary
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_transportation_summary AS
+CREATE VIEW vw_transportation_summary AS
 
 SELECT
 
     t.transport_id,
-    t.order_id,
+
+    o.order_id,
+
     c.customer_name,
 
     t.carrier_name,
     t.tracking_number,
+
+    t.shipment_status,
 
     t.dispatch_date,
     t.estimated_delivery_date,
@@ -192,54 +209,57 @@ SELECT
     o.city
 
 FROM transportation_logistics t
+
 JOIN orders o
-ON t.order_id = o.order_id
+ON t.order_row_id = o.row_id
 
 JOIN customers c
 ON o.customer_id = c.customer_id;
 
 -- =====================================================
--- View: vw_payment_summary
--- Description: Payment Summary
+-- View: Payment Summary
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_payment_summary AS
+CREATE VIEW vw_payment_summary AS
 
-SELECT 
-   
+SELECT
+
     p.payment_id,
-    p.order_id,
+
+    o.order_id,
 
     c.customer_name,
 
     p.payment_method,
     p.payment_status,
     p.payment_date,
+
     p.transaction_reference,
+
     p.payment_amount,
 
-    o.region,
-    o.sales
+    o.sales,
+    o.region
 
 FROM payments p
 
 JOIN orders o
-ON p.order_id = o.order_id
+ON p.order_row_id = o.row_id
 
 JOIN customers c
 ON o.customer_id = c.customer_id;
 
 -- =====================================================
--- View: vw_return_summary
--- Description: Return Analysis Summary
+-- View: Return Summary
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_return_summary AS
+CREATE VIEW vw_return_summary AS
 
 SELECT
 
     r.return_id,
-    r.order_id,
+
+    o.order_id,
 
     c.customer_name,
 
@@ -247,67 +267,71 @@ SELECT
     p.category,
     p.sub_category,
 
-    r.return_date,
     r.return_reason,
-    r.refund_amount,
     r.return_status,
 
-    o.region,
-    o.sales
+    r.return_date,
+
+    r.refund_amount,
+
+    o.sales,
+    o.region
 
 FROM returns r
 
 JOIN orders o
-ON r.order_id = o.order_id
+ON r.order_row_id = o.row_id
 
 JOIN customers c
 ON o.customer_id = c.customer_id
 
-JOIN products p 
+JOIN products p
 ON r.product_id = p.product_id;
 
 -- =====================================================
--- View: vw_customer_discount_summary
--- Description: Customer Discount Summary
+-- View: Customer Discount Summary
 -- =====================================================
 
-CREATE OR REPLACE VIEW vw_customer_discount_summary AS
+CREATE VIEW vw_customer_discount_summary AS
 
 SELECT
 
     cd.discount_id,
 
-    c.customer_id,
     c.customer_name,
-    c.segment,
 
     cd.discount_type,
+
     cd.discount_percentage,
 
     cd.start_date,
     cd.end_date,
+
     cd.is_active,
 
-    COUNT(o.order_id) AS total_orders,
-    COALESCE(SUM(o.sales),0) AS total_sales,
-    COALESCE(SUM(o.profit),0) AS total_profit
+    COUNT(DISTINCT o.order_id) AS total_orders,
+
+    COALESCE(SUM(o.sales),0) AS total_sales
 
 FROM customer_discounts cd
 
 JOIN customers c
 ON cd.customer_id = c.customer_id
 
-LEFT Join orders o
+LEFT JOIN orders o
 ON c.customer_id = o.customer_id
 
 GROUP BY
 
     cd.discount_id,
-    c.customer_id,
+
     c.customer_name,
-    c.segment,
+
     cd.discount_type,
+
     cd.discount_percentage,
+
     cd.start_date,
     cd.end_date,
+
     cd.is_active;
