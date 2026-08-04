@@ -7,28 +7,20 @@
 
 SET search_path TO public, staging;
 
--- ============================================
--- Load Customers
--- ============================================
-
 INSERT INTO customers
 (
     customer_id,
     customer_name,
     segment
 )
-
 SELECT DISTINCT
-
     customer_id,
     customer_name,
     segment
-
 FROM staging.superstore_raw
-
 WHERE customer_id IS NOT NULL
-  AND customer_name IS NOT NULL
-  AND segment IS NOT NULL
-
 ON CONFLICT (customer_id)
 DO NOTHING;
+
+SELECT COUNT(*) AS total_customers
+FROM customers;

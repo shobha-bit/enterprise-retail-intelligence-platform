@@ -144,7 +144,7 @@ ORDER BY stock_quantity DESC;
 -- ============================================
 
 SELECT
-    SUM(sales) AS total_sales
+    ROUND(SUM(sales), 2) AS total_sales
 FROM orders;
 
 -- ============================================
@@ -153,7 +153,7 @@ FROM orders;
 -- ============================================
 
 SELECT
-    AVG(sales) AS average_sales
+     ROUND(AVG(sales), 2) AS average_sales
 FROM orders;
 
 -- ============================================
@@ -217,7 +217,7 @@ FROM orders;
 
 SELECT
     region,
-    SUM(sales) AS total_sales
+    ROUND(SUM(sales), 2) AS total_sales
 FROM orders
 GROUP BY region
 ORDER BY total_sales DESC;
@@ -229,7 +229,7 @@ ORDER BY total_sales DESC;
 
 SELECT
     state,
-    SUM(sales) AS total_sales
+    ROUND(SUM(sales), 2) AS total_sales
 FROM orders
 GROUP BY state
 ORDER BY total_sales DESC;
@@ -241,7 +241,7 @@ ORDER BY total_sales DESC;
 
 SELECT
     c.customer_name,
-    SUM(o.sales) AS total_sales
+    ROUND(SUM(o.sales), 2) AS total_sales
 FROM orders o
 JOIN customers c
 ON o.customer_id = c.customer_id
@@ -255,7 +255,7 @@ ORDER BY total_sales DESC;
 
  SELECT
     p.product_name,
-    SUM(o.sales) AS total_sales
+    ROUND(SUM(o.sales), 2) AS total_sales
 FROM orders o
 JOIN products p
 ON o.product_id = p.product_id
@@ -269,7 +269,7 @@ ORDER BY total_sales DESC;
 
 SELECT
 ship_mode,
-SUM(sales) AS total_sales
+ROUND(SUM(sales), 2) AS total_sales
 FROM orders
 GROUP BY ship_mode;
 
@@ -292,7 +292,7 @@ SELECT
 
 SELECT 
    region,
-   AVG(sales) AS average_sales
+   ROUND(AVG(sales), 2) AS average_sales
    FROM orders
    GROUP BY region;
 
@@ -303,7 +303,7 @@ SELECT
 
 SELECT
     region,
-    SUM(sales) AS total_sales
+    ROUND(SUM(sales), 2) AS total_sales
 FROM orders
 GROUP BY region
 HAVING SUM(sales) > 100000;
@@ -315,7 +315,7 @@ HAVING SUM(sales) > 100000;
 
 SELECT
     c.customer_name,
-    SUM(o.sales) AS total_sales
+    ROUND(SUM(o.sales), 2) AS total_sales
 FROM orders o
 JOIN customers c
 ON o.customer_id = c.customer_id
@@ -357,7 +357,7 @@ HAVING COUNT(DISTINCT order_id) > 20;
 
 SELECT
     ship_mode,
-    AVG(sales) AS average_sales
+    ROUND(AVG(sales), 2) AS average_sales
 FROM orders
 GROUP BY ship_mode
 HAVING AVG(sales) > 300;
@@ -369,62 +369,9 @@ HAVING AVG(sales) > 300;
 
 SELECT
     city,
-    SUM(sales) AS total_sales
+    ROUND(SUM(sales), 2) AS total_sales
 FROM orders
 GROUP BY city
 HAVING SUM(sales) > 20000
 ORDER BY total_sales DESC;
-
--- ============================================
--- Query 37
--- Top 10 Customers by Sales
--- ============================================
-
-SELECT
-    c.customer_name,
-    SUM(o.sales) AS total_sales
-FROM orders o
-JOIN customers c
-ON o.customer_id = c.customer_id
-GROUP BY c.customer_name
-ORDER BY total_sales DESC
-LIMIT 10;
-
--- ============================================
--- Query 38
--- Monthly Sales Trend
--- ============================================
-
-SELECT
-    DATE_TRUNC('month', order_date) AS sales_month,
-    SUM(sales) AS total_sales
-FROM orders
-GROUP BY DATE_TRUNC('month', order_date)
-ORDER BY sales_month;
-
--- ============================================
--- Query 39
--- Sales by Category
--- ============================================
-
-SELECT
-    p.category,
-    SUM(o.sales) AS total_sales
-FROM orders o
-JOIN products p
-ON o.product_id = p.product_id
-GROUP BY p.category
-ORDER BY total_sales DESC;
-
--- ============================================
--- Query 40
--- Sales Ranking
--- ============================================
-
-SELECT
-    order_id,
-    customer_id,
-    sales,
-    RANK() OVER (ORDER BY sales DESC) AS sales_rank
-FROM orders;
 
