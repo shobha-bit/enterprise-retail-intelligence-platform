@@ -143,7 +143,7 @@ ON o.customer_id = c.customer_id
 
 GROUP BY c.segment
 
-ORDER BY total_sales DESC, c.segment; 
+ORDER BY total_sales DESC; 
 
 -- ============================================
 -- Dashboard Query 8
