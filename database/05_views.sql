@@ -88,10 +88,10 @@ GROUP BY
     c.segment;
 
 -- =====================================================
--- View: Product Performance
+-- View: Product Performance Yearly
 -- =====================================================
 
-CREATE VIEW vw_product_performance AS
+CREATE OR REPLACE VIEW vw_product_performance_yearly AS
 
 SELECT
 
@@ -100,20 +100,24 @@ SELECT
     p.category,
     p.sub_category,
 
+    EXTRACT(YEAR FROM o.order_date)::INT AS order_year,
+
     COUNT(o.row_id) AS times_sold,
     COALESCE(SUM(o.sales), 0) AS total_sales,
     COALESCE(AVG(o.sales), 0) AS average_sales
+
 FROM products p
 
 LEFT JOIN orders o
-ON p.product_id = o.product_id
+    ON p.product_id = o.product_id
 
 GROUP BY
 
     p.product_id,
     p.product_name,
     p.category,
-    p.sub_category;
+    p.sub_category,
+    EXTRACT(YEAR FROM o.order_date)::INT;
 
 -- =====================================================
 -- View: Inventory Status
