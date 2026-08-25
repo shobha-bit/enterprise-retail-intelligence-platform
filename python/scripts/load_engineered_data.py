@@ -10,7 +10,7 @@ Author : Shobha Saxena
 """
 
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 import os
 
@@ -27,7 +27,8 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 DATABASE_URL = (
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@"
+    f"{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
 engine = create_engine(DATABASE_URL)
@@ -41,15 +42,29 @@ orders_df = pd.read_csv(
 )
 
 # =========================================================
-# Load into PostgreSQL
+# Load Data Without Dropping Dependent Views
 # =========================================================
 
-orders_df.to_sql(
-    "orders_engineered",
-    engine,
-    if_exists="replace",
-    index=False
-)
+with engine.begin() as conn:
+
+    print("=" * 60)
+    print("LOADING ENGINEERED DATA")
+    print("=" * 60)
+
+    # Remove existing rows but keep the table structure
+    conn.execute(
+        text("TRUNCATE TABLE orders_engineered;")
+    )
+
+    print("Existing engineered data cleared.")
+
+    # Insert fresh engineered dataset
+    orders_df.to_sql(
+        "orders_engineered",
+        conn,
+        if_exists="append",
+        index=False
+    )
 
 print("=" * 60)
 print("Orders Engineered Table Loaded Successfully")
